@@ -11,29 +11,25 @@ target_compile_options(project_compiler_options INTERFACE
     $<$<CONFIG:Release>:-O2>
 )
 
-# include_directories(src include)
-
 add_subdirectory(src/ARC)
-
 include_directories(src)
 
 set(SOURCES 
     src/main.cpp
-    # include/graph.h
-    # src/graph.cpp
-    # src/graph_dump.cpp
-    # src/graph_algo.cpp
-    # include/node.h
-    # src/node.cpp
-    # include/edge.h
-    # src/edge.cpp
     )
-
     
 add_executable(${PROJECT_NAME} ${SOURCES})
-# add target_link_options
+
 target_link_libraries(
-    # ${PROJECT_NAME} PRIVATE project_compiler_options 
-    # $<$<CONFIG:Debug>:-fsanitize=address,leak> 
-    # $<$<CONFIG:Release>:-O2>
-    ARC)
+    ${PROJECT_NAME} PRIVATE project_compiler_options ARC)
+
+    # keep project_compiler_options interface as you had it
+target_compile_options(project_compiler_options INTERFACE
+  $<$<CONFIG:Debug>:-Wall -Wextra -g -fno-omit-frame-pointer -fsanitize=address,leak>
+  $<$<CONFIG:Release>:-O2>
+)
+
+# link-time sanitizer flags (if needed) should go to link options for Debug
+target_link_options(${PROJECT_NAME} PRIVATE
+  $<$<CONFIG:Debug>:-fsanitize=address,leak>
+)

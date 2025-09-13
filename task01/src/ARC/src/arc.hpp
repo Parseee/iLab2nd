@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <iostream>
 #include <list>
-#include <sys/types.h>
 #include <unordered_map>
 
 namespace caches {
@@ -81,12 +80,6 @@ T caches::Cache<KeyT, T>::get_page(KeyT key, F slow_get_page) {
             b1.pop_back();
             replace(key);
         } else {
-            // auto evicted_key = t1.back().first;
-            // t1.pop_back();
-            // hash.erase(evicted_key);
-            // b1.push_front(evicted_key);
-            // loc_hash[evicted_key] = B1;
-            // ghost_hash[evicted_key] = b1.begin();
             LRU_evict(key, t1, b1, B1);
         }
     } else if (t1.size() + t2.size() + b1.size() + b2.size() >= cap) {
@@ -122,21 +115,8 @@ template <typename KeyT, typename T>
 void caches::Cache<KeyT, T>::replace(KeyT key) {
     if (!t1.empty() &&
         (t1.size() > p || (loc_hash[key] == B2 && t1.size() == p))) {
-        // auto evicted_key = t1.back().first;
-        // hash.erase(t1.back().first);
-        // t1.pop_back();
-        // b1.push_front(evicted_key);
-        // loc_hash[evicted_key] = B1;
-        // ghost_hash[evicted_key] = b1.begin();
         LRU_evict(key, t1, b1, B1);
     } else {
-        // auto evicted_key = t2.back().first;
-        // hash.erase(t2.back().first);
-        // t2.pop_back();
-        // hash.erase(evicted_key);
-        // b2.push_front(evicted_key);
-        // loc_hash[evicted_key] = B2;
-        // ghost_hash[evicted_key] = b2.begin();
         LRU_evict(key, t2, b2, B2);
     }
 }
