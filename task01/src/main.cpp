@@ -13,8 +13,6 @@ void count_hits(std::ifstream &in, std::ofstream &out);
 int main() {
     std::ifstream InFileTests;
     std::ofstream OutFileTests;
-    // std::ifstream InFileRand;
-    // std::ofstream OutFileRand;
 
     InFileTests.open("InputTests.txt");
     OutFileTests.open("OutputTests.txt");
