@@ -17,8 +17,8 @@ void process_files(int test_num);
 void ideal_hashing();
 
 int main() {
-    // count_hits();
-    ideal_hashing();
+    count_hits();
+    // ideal_hashing();
 }
 
 int slow_get_page(int num) {
