@@ -1,8 +1,10 @@
+#include <array>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <random>
 #include <string>
+#include <unordered_set>
 
 #include "ARC/src/arc.hpp"
 
@@ -12,8 +14,12 @@ int slow_get_page(int num);
 void count_hits();
 void count_hits_from_file(std::ifstream &in, std::ofstream &out);
 void process_files(int test_num);
+void ideal_hashing();
 
-int main() { count_hits(); }
+int main() {
+    // count_hits();
+    ideal_hashing();
+}
 
 int slow_get_page(int num) {
     // std::cerr << "slow : " << num << std::endl;
@@ -75,4 +81,34 @@ void process_files(int test_num) {
         in.close();
         out.close();
     }
+}
+
+void ideal_hashing() {
+    size_t cache_size, num_calls;
+    std::cin >> cache_size >> num_calls;
+
+    std::vector<int> q(num_calls);
+    std::unordered_set<int> cache;
+
+    for (auto &num : q) {
+        std::cin >> num;
+    }
+
+    for (const auto &query : q) {
+        if (cache.find(query) != cache.end()) {
+            std::cout << "hit" << std::endl;
+            ++hits;
+        } else {
+            if (cache.size() == cache_size * 2) {
+                for (auto it = q.rbegin(); it != q.rend(); ++it) {
+                    if (cache.find(*it) != cache.end()) {
+                        cache.erase(*it);
+                    }
+                }
+            }
+            cache.insert(query);
+        }
+    }
+
+    std::cout << hits << std::endl;
 }
