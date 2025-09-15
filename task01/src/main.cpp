@@ -37,8 +37,8 @@ void count_hits() {
     for (int i = 0; i < num_calls; ++i) {
         int x;
         std::cin >> x;
-        std::cerr << x << " | " << cache.get_page(x, slow_get_page)
-                  << std::endl;
+        int out = cache.get_page(x, slow_get_page);
+        // std::cerr << x << " | " << out << std::endl;
     }
 
     std::cout << hits << std::endl;
