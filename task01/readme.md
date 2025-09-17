@@ -1,4 +1,4 @@
-The program implements ARC caching. The implementation supposes we have twice as much cache space as we input. This was chosen because of divisibility problems. It's easier to assume that we have double capacity.
+The program implements ARC caching. the answer has format \<ARC\> | \<Belady\>
 
 # To run app
 `cmake -B build && cmake --build build`
@@ -10,13 +10,13 @@ The program implements ARC caching. The implementation supposes we have twice as
 
 test case | ARC cache hits | Ideal cache hits |
 |-------- | -------------- | ---------------- |
-| 1       |       4        |        7         |
-| 2       |       5        |        5         |
+| 1       |       4        |       9          |
+| 2       |       5        |       5          |
 | 3       |       15       |       16         |
-| 4       |       1        |        1         |
-| 5       |       11       |       11         |
-| 6       |       7        |       12         |
-| 7       |       13       |       14         |
-| 8       |       8        |        8         |
-| 9       |       1        |        1         |
-| 10      |       4        |        4         |
+| 4       |       8        |       16         |
+| 5       |       9        |       18         |
+| 6       |       16       |       25         |
+| 7       |       9        |       12         |
+| 8       |       4        |       8          |
+| 9       |       10       |       15         |
+| 10      |       6        |       8          |

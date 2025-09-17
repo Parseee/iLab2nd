@@ -1,24 +1,103 @@
 #include <array>
+#include <cstddef>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <iterator>
+#include <limits>
 #include <random>
 #include <string>
 #include <unordered_set>
+#include <vector>
 
 #include "ARC/src/arc.hpp"
 
 size_t hits;
 
 int slow_get_page(int num);
-void count_hits();
-void count_hits_from_file(std::ifstream &in, std::ofstream &out);
+
+template <typename T>
+int count_hits(size_t cache_size, size_t num_calls,
+               const std::vector<T> &queries);
+template <typename T>
+int ideal_caching(size_t cache_size, size_t num_calls, std::vector<T> &queries);
 void process_files(int test_num);
-void ideal_hashing();
 
 int main() {
-    count_hits();
-    // ideal_hashing();
+    int cache_size, num_calls;
+    std::cin >> cache_size >> num_calls;
+
+    std::vector<int> queries(num_calls);
+    for (auto &q : queries) {
+        std::cin >> q;
+    }
+
+    std::cout << count_hits(cache_size, num_calls, queries) << " | "
+              << ideal_caching(cache_size, num_calls, queries);
+}
+
+template <typename T>
+int count_hits(size_t cache_size, size_t num_calls,
+               const std::vector<T> &queries) {
+    caches::Cache<int, int> cache(cache_size);
+    hits = num_calls;
+    for (const auto &q : queries) {
+        cache.get_page(q, slow_get_page);
+    }
+    return hits;
+}
+
+template <typename T>
+int ideal_caching(size_t cache_size, size_t num_calls,
+                  std::vector<T> &queries) {
+    std::unordered_set<T> cache;
+
+    hits = 0;
+
+    for (auto it = queries.begin(); it != queries.end(); ++it) {
+        if (cache.contains(*it)) {
+            ++hits;
+        } else {
+            if (cache.size() < cache_size) {
+                cache.insert(*it);
+                continue;
+            }
+
+            std::unordered_map<T, typename std::vector<T>::iterator>
+                future_occurance;
+            for (const auto &item : cache) {
+                typename std::vector<T>::iterator future_index = queries.end();
+                for (auto qit = it + 1; qit != queries.end(); ++qit) {
+                    if (*qit == item) {
+                        future_index = qit;
+                        break;
+                    }
+                }
+                future_occurance[item] = future_index;
+            }
+
+            std::vector<T> never_used;
+
+            for (const auto &[key, n_it] : future_occurance) {
+                if (n_it == queries.end()) {
+                    never_used.push_back(key);
+                }
+            }
+
+            if (!never_used.empty()) {
+                cache.erase(never_used.front());
+            } else {
+                auto victim = queries.begin();
+                for (const auto &[key, occ] : future_occurance) {
+                    victim = (victim < occ) ? occ : victim;
+                }
+                cache.erase(*victim);
+            }
+            cache.insert(*it);
+        }
+    }
+
+    return hits;
 }
 
 int slow_get_page(int num) {
@@ -27,24 +106,8 @@ int slow_get_page(int num) {
     return num * 2;
 }
 
-void count_hits() {
-    int cache_size, num_calls;
-    std::cin >> cache_size >> num_calls;
-
-    caches::Cache<int, int> cache(cache_size);
-
-    hits = num_calls;
-    for (int i = 0; i < num_calls; ++i) {
-        int x;
-        std::cin >> x;
-        int out = cache.get_page(x, slow_get_page);
-        // std::cerr << x << " | " << out << std::endl;
-    }
-
-    std::cout << hits << std::endl;
-}
-
-void count_hits_from_file(std::ifstream &in, std::ofstream &out) {
+#ifdef NOT_DEF
+int count_hits_from_file(std::ifstream &in, std::ofstream &out) {
     int cache_size, num_calls;
     in >> cache_size >> num_calls;
 
@@ -52,15 +115,18 @@ void count_hits_from_file(std::ifstream &in, std::ofstream &out) {
 
     hits = num_calls;
 
-    for (int i = 0; i < num_calls; ++i) {
-        int q;
+    std::vector<int> queries(num_calls);
+    for (auto &q : queries) {
         in >> q;
+    }
+
+    for (const auto &q : queries) {
         cache.get_page(q, slow_get_page);
     }
 
     out << hits << std::endl;
+    std::cout << hits << "  |  ";
 }
-
 void process_files(int test_num) {
     std::ifstream in;
     std::ofstream out;
@@ -82,33 +148,4 @@ void process_files(int test_num) {
         out.close();
     }
 }
-
-void ideal_hashing() {
-    size_t cache_size, num_calls;
-    std::cin >> cache_size >> num_calls;
-
-    std::vector<int> q(num_calls);
-    std::unordered_set<int> cache;
-
-    for (auto &num : q) {
-        std::cin >> num;
-    }
-
-    for (const auto &query : q) {
-        if (cache.find(query) != cache.end()) {
-            std::cout << "hit" << std::endl;
-            ++hits;
-        } else {
-            if (cache.size() == cache_size * 2) {
-                for (auto it = q.rbegin(); it != q.rend(); ++it) {
-                    if (cache.find(*it) != cache.end()) {
-                        cache.erase(*it);
-                    }
-                }
-            }
-            cache.insert(query);
-        }
-    }
-
-    std::cout << hits << std::endl;
-}
+#endif /* NOT_DEF */
