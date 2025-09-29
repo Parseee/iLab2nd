@@ -23,14 +23,9 @@ int ideal_caching(size_t cache_size, const std::vector<T> &queries) {
                                         typename std::vector<T>::const_iterator>
                 future_occurance;
             for (const auto &item : cache) {
-                typename std::vector<T>::const_iterator future_index =
-                    queries.end();
-                for (auto qit = it + 1; qit != queries.end(); ++qit) {
-                    if (*qit == item) {
-                        future_index = qit;
-                        break;
-                    }
-                }
+                auto future_index =
+                    std::find_if(std::next(it), queries.end(),
+                                 [&item](const auto &q) { return q == item; });
                 future_occurance[item] = future_index;
             }
 
@@ -47,7 +42,7 @@ int ideal_caching(size_t cache_size, const std::vector<T> &queries) {
             } else {
                 auto victim = queries.begin();
                 for (const auto &[key, occ] : future_occurance) {
-                    victim = (victim < occ) ? occ : victim;
+                    victim = std::max(victim, occ);
                 }
                 cache.erase(*victim);
             }

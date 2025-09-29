@@ -31,8 +31,9 @@ template <typename KeyT, typename T> class Cache {
     void replace();
     void LRU_to_ghost(std::list<std::pair<KeyT, T>> &list,
                       std::list<T> &ghost_list, Which which);
-    void remove_from_ghost(KeyT key, std::list<KeyT> &ghost);
-    template <typename F> T handle_miss(KeyT key, F slow_get_page);
+    void remove_from_ghost(KeyT key, std::list<KeyT> &ghost); // add inline...
+    template <typename F> T handle_part_miss(KeyT key, F slow_get_page);
+    template <typename F> T handle_complete_miss(KeyT key, F slow_get_page);
 };
 } // namespace caches
 
@@ -47,17 +48,17 @@ T caches::Cache<KeyT, T>::get_page(KeyT key, F slow_get_page) {
         } else {
             t2.splice(t2.begin(), t2, hit);
         }
-        hash[key] = t2.begin();
+        hash[key] = t2.begin(); // add assert
         loc_hash[key] = Which::T2;
         return t2.front().second;
     }
 
-    return handle_miss(key, slow_get_page);
+    return handle_part_miss(key, slow_get_page);
 }
 
 template <typename KeyT, typename T>
 template <typename F>
-T caches::Cache<KeyT, T>::handle_miss(KeyT key, F slow_get_page) {
+T caches::Cache<KeyT, T>::handle_part_miss(KeyT key, F slow_get_page) {
     auto cache_miss = ghost_hash.find(key);
     if (cache_miss != ghost_hash.end()) { // partial miss
         GhostListIt hit = cache_miss->second;
@@ -80,7 +81,12 @@ T caches::Cache<KeyT, T>::handle_miss(KeyT key, F slow_get_page) {
         return t2.front().second;
     }
 
-    // complete miss
+    return handle_complete_miss(key, slow_get_page);
+}
+
+template <typename KeyT, typename T>
+template <typename F>
+T caches::Cache<KeyT, T>::handle_complete_miss(KeyT key, F slow_get_page) {
     auto total_size = t1.size() + t2.size() + b1.size() + b2.size();
     if (total_size >= capacity) {
         if (t1.size() + b1.size() == capacity) {
@@ -97,16 +103,16 @@ T caches::Cache<KeyT, T>::handle_miss(KeyT key, F slow_get_page) {
         replace();
     }
 
-    t1.push_front({key, slow_get_page(key)});
+    t1.emplace_front(key, slow_get_page(key));
     hash[key] = t1.begin();
     loc_hash[key] = Which::T1;
     return t1.front().second;
 }
 
 template <typename KeyT, typename T>
-void caches::Cache<KeyT, T>::LRU_to_ghost(std::list<std::pair<KeyT, T>> &list,
-                                          std::list<T> &ghost_list,
-                                          Which which) {
+inline void
+caches::Cache<KeyT, T>::LRU_to_ghost(std::list<std::pair<KeyT, T>> &list,
+                                     std::list<T> &ghost_list, Which which) {
     if (list.size() == 0) {
         return;
     }
@@ -118,7 +124,8 @@ void caches::Cache<KeyT, T>::LRU_to_ghost(std::list<std::pair<KeyT, T>> &list,
     ghost_hash[evicted_key] = ghost_list.begin();
 }
 
-template <typename KeyT, typename T> void caches::Cache<KeyT, T>::replace() {
+template <typename KeyT, typename T>
+inline void caches::Cache<KeyT, T>::replace() {
     if (!t1.empty() && (t1.size() > p || (p == 0 && t2.size() == capacity))) {
         LRU_to_ghost(t1, b1, Which::B1);
     } else {
@@ -127,8 +134,8 @@ template <typename KeyT, typename T> void caches::Cache<KeyT, T>::replace() {
 }
 
 template <typename KeyT, typename T>
-void caches::Cache<KeyT, T>::remove_from_ghost(KeyT key,
-                                               std::list<KeyT> &ghost) {
+inline void caches::Cache<KeyT, T>::remove_from_ghost(KeyT key,
+                                                      std::list<KeyT> &ghost) {
     auto hit = ghost_hash.find(key);
 
     if (hit != ghost_hash.end()) {
