@@ -1,4 +1,5 @@
 #include <array>
+#include <cassert>
 #include <cstddef>
 #include <cstdlib>
 #include <fstream>
@@ -25,7 +26,10 @@ void process_files(int test_num);
 int main() {
     int cache_size, num_calls;
     std::cin >> cache_size >> num_calls;
-// check nonnegative
+
+    assert((cache_size > 0 && num_calls > 0) &&
+           "cache size and num calls must be non-negative");
+
     std::vector<int> queries(num_calls);
     for (auto &q : queries) {
         std::cin >> q;
