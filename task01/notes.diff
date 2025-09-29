@@ -1,0 +1,134 @@
+# diff --git a/task01/src/ARC/src/arc.cpp b/task01/src/ARC/src/arc.cpp
+# index 8ea0ba8..c3c75be 100644
+# --- a/task01/src/ARC/src/arc.cpp
+# +++ b/task01/src/ARC/src/arc.cpp
+# @@ -1,2 +1,3 @@
+#  #include "arc.hpp"
+ 
+# +// Drop it. Header only library is OK
+# \ No newline at end of file
+# diff --git a/task01/src/ARC/src/arc.hpp b/task01/src/ARC/src/arc.hpp
+# index ca618b2..5a8adf0 100644
+# --- a/task01/src/ARC/src/arc.hpp
+# +++ b/task01/src/ARC/src/arc.hpp
+# @@ -5,14 +5,26 @@
+#  #include <list>
+#  #include <unordered_map>
+ 
+# +// move it to caches namespace (or even in Cache class)
+#  static constexpr size_t DEFAULT_CAPACITY = 10;
+ 
+#  namespace caches {
+#  template <typename KeyT, typename T> class Cache {
+#    public:
+#      Cache() noexcept : capacity(DEFAULT_CAPACITY) {}
+# +    // redundant explicit
+#      explicit Cache(size_t capacity) noexcept : capacity(capacity) {}
+ 
+# +/*
+# +    here you can provide one Ctor instead of two: 
+# +
+# +    ```
+# +        Cache(size_t capacity = DEFAULT_CAPACITY) noexcept : capacity(capacity) {}
+# +    ```
+# +
+# +    so, rid of the first one
+# +*/
+# +
+#      template <typename F> T get_page(KeyT key, F slow_get_page);
+ 
+#    private:
+# @@ -27,13 +39,16 @@ template <typename KeyT, typename T> class Cache {
+#      std::unordered_map<KeyT, ListIt> hash;
+#      using GhostListIt = typename std::list<KeyT>::iterator;
+#      std::unordered_map<KeyT, GhostListIt> ghost_hash;
+# -    enum Which { T1, T2, B1, B2, NIL };
+# +    enum Which { T1, T2, B1, B2, NIL }; // please, prefer `enum class`es
+#      std::unordered_map<KeyT, Which> loc_hash;
+ 
+#      void replace(KeyT key);
+#      void LRU_to_ghost(KeyT key, std::list<std::pair<KeyT, T>> &list,
+#                        std::list<T> &ghost_list, Which which);
+ 
+# +    // use preprocessor directives (such as #if 0 ...) instead of comments
+# +    // in purposes to turning the code off (or just delete it). 
+# +    
+#      // void remove_from_list(KeyT key, std::list<std::pair<KeyT, T>> &list);
+#      void remove_from_ghost(KeyT key, std::list<KeyT> &ghost);
+#  };
+# @@ -43,6 +58,8 @@ template <typename KeyT, typename T>
+#  template <typename F>
+#  T caches::Cache<KeyT, T>::get_page(KeyT key, F slow_get_page) {
+#      auto cache_hit = hash.find(key);
+# +    // you can separate this function into several ones
+# +    
+#      if (cache_hit != hash.end()) { // cache-hit
+#          ListIt hit = cache_hit->second;
+#          if (loc_hash[key] == T1) {
+# @@ -62,6 +79,8 @@ T caches::Cache<KeyT, T>::get_page(KeyT key, F slow_get_page) {
+#              p = std::min(capacity, p + std::max(b2.size() / b1.size(), 1ul));
+#              replace(key);
+ 
+# # +            // [here and around]: use emplace in such a cases: t2.emplace_front(key, slow_get_page(key));
+# # +            
+#              t2.push_front({key, slow_get_page(key)});
+#              b1.erase(hit);
+#          } else {
+# @@ -131,6 +150,7 @@ void caches::Cache<KeyT, T>::remove_from_ghost(KeyT key,
+#      auto hit = ghost_hash.find(key);
+ 
+#      if (hit != ghost_hash.end()) {
+# +        // I don't think you need special `NIL` value. Just drop node binded with the key from the loc_hash 
+#          loc_hash[key] = NIL;
+#          auto elem_it = hit->second;
+#          ghost.erase(elem_it);
+# diff --git a/task01/src/main.cpp b/task01/src/main.cpp
+# index 59768ec..feb2689 100644
+# --- a/task01/src/main.cpp
+# +++ b/task01/src/main.cpp
+# @@ -12,15 +12,15 @@
+ 
+#  #include "ARC/src/arc.hpp"
+ 
+# -size_t hits;
+# +size_t hits; // no global variables, please. Let get_page return bool
+ 
+#  int slow_get_page(int num);
+ 
+# -template <typename T>
+# +template <typename T> // should be `static` (*or placed to anonymous namespace*)
+#  int count_hits(size_t cache_size, size_t num_calls,
+#                 const std::vector<T> &queries);
+#  template <typename T>
+# -int ideal_caching(size_t cache_size, size_t num_calls, std::vector<T> &queries);
+# +int ideal_caching(size_t cache_size, size_t num_calls, /* const ? */ std::vector<T> &queries);
+#  void process_files(int test_num);
+ 
+#  int main() {
+# @@ -47,7 +47,7 @@ int count_hits(size_t cache_size, size_t num_calls,
+#      return hits;
+#  }
+ 
+# -template <typename T>
+# +template <typename T> // please, make a separated Belady implementation
+#  int ideal_caching(size_t cache_size, size_t num_calls,
+#                    std::vector<T> &queries) {
+#      std::unordered_set<T> cache;
+# @@ -101,6 +101,8 @@ int ideal_caching(size_t cache_size, size_t num_calls,
+#  }
+ 
+#  int slow_get_page(int num) {
+# +    // unneccessary comments
+# +
+#      // std::cerr << "slow : " << num << std::endl;
+#      --hits;
+#      return num * 2;
+# @@ -133,7 +135,7 @@ void process_files(int test_num) {
+ 
+#      for (int i = 0; i < test_num; ++i) {
+#          in.open("../tests/test" + std::to_string(i + 1) + ".in",
+# -                std::fstream::in);
+# +                std::fstream::in); // '../tests/test' looks painful :)
+#          out.open("../tests/test" + std::to_string(i + 1) + ".out",
+#                   std::fstream::out);
+ 

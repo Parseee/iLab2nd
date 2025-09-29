@@ -1,13 +1,13 @@
-add_library(ARC STATIC
-    src/arc.hpp
+add_library(Belady STATIC
+    src/belady.hpp
 )
 
-set_target_properties(ARC PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(Belady PROPERTIES LINKER_LANGUAGE CXX)
 
 set(CMAKE_CXX_STANDART 20)
 
 
-set_target_properties(ARC PROPERTIES FOLDER "src")
+set_target_properties(Belady PROPERTIES FOLDER "src")
 
 target_include_directories(ARC
     PUBLIC

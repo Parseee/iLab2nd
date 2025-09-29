@@ -12,16 +12,17 @@ target_compile_options(project_compiler_options INTERFACE
 )
 
 add_subdirectory(src/ARC)
+add_subdirectory(src/Belady)
 include_directories(src)
 
-set(SOURCES 
-    src/main.cpp
+set(ARC_SOURCES 
+    src/arc.cpp
     )
     
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(arc-cache ${ARC_SOURCES})
 
 target_link_libraries(
-    ${PROJECT_NAME} PRIVATE project_compiler_options ARC)
+    arc-cache PRIVATE project_compiler_options ARC)
 
     # keep project_compiler_options interface as you had it
 target_compile_options(project_compiler_options INTERFACE
@@ -30,6 +31,26 @@ target_compile_options(project_compiler_options INTERFACE
 )
 
 # link-time sanitizer flags (if needed) should go to link options for Debug
-target_link_options(${PROJECT_NAME} PRIVATE
+target_link_options(arc-cache PRIVATE
+  $<$<CONFIG:Debug>:-fsanitize=address,leak>
+)
+
+set(BELADY_SOURCES 
+    src/belady.cpp
+    )
+    
+add_executable(belady-cache ${BELADY_SOURCES})
+
+target_link_libraries(
+    belady-cache PRIVATE project_compiler_options Belady)
+
+    # keep project_compiler_options interface as you had it
+target_compile_options(project_compiler_options INTERFACE
+  $<$<CONFIG:Debug>:-Wall -Wextra -g -fno-omit-frame-pointer -fsanitize=address,leak>
+  $<$<CONFIG:Release>:-O2>
+)
+
+# link-time sanitizer flags (if needed) should go to link options for Debug
+target_link_options(belady-cache PRIVATE
   $<$<CONFIG:Debug>:-fsanitize=address,leak>
 )
