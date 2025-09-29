@@ -28,8 +28,8 @@ template <typename KeyT, typename T> class Cache {
     std::unordered_map<KeyT, GhostListIt> ghost_hash;
     std::unordered_map<KeyT, Which> loc_hash;
 
-    void replace(KeyT key);
-    void LRU_to_ghost(KeyT key, std::list<std::pair<KeyT, T>> &list,
+    void replace();
+    void LRU_to_ghost(std::list<std::pair<KeyT, T>> &list,
                       std::list<T> &ghost_list, Which which);
     void remove_from_ghost(KeyT key, std::list<KeyT> &ghost);
     template <typename F> T handle_miss(KeyT key, F slow_get_page);
@@ -63,13 +63,13 @@ T caches::Cache<KeyT, T>::handle_miss(KeyT key, F slow_get_page) {
         GhostListIt hit = cache_miss->second;
         if (loc_hash[key] == Which::B1) {
             p = std::min(capacity, p + std::max(b2.size() / b1.size(), 1ul));
-            replace(key);
+            replace();
 
             t2.push_front({key, slow_get_page(key)});
             b1.erase(hit);
         } else {
             p = std::max(0ul, p - std::max(b1.size() / b2.size(), 1ul));
-            replace(*hit);
+            replace();
 
             t2.push_front({key, slow_get_page(key)});
             b2.erase(hit);
@@ -94,7 +94,7 @@ T caches::Cache<KeyT, T>::handle_miss(KeyT key, F slow_get_page) {
         }
     }
     if (t1.size() + t2.size() == capacity) {
-        replace(key);
+        replace();
     }
 
     t1.push_front({key, slow_get_page(key)});
@@ -104,8 +104,7 @@ T caches::Cache<KeyT, T>::handle_miss(KeyT key, F slow_get_page) {
 }
 
 template <typename KeyT, typename T>
-void caches::Cache<KeyT, T>::LRU_to_ghost(KeyT key,
-                                          std::list<std::pair<KeyT, T>> &list,
+void caches::Cache<KeyT, T>::LRU_to_ghost(std::list<std::pair<KeyT, T>> &list,
                                           std::list<T> &ghost_list,
                                           Which which) {
     if (list.size() == 0) {
@@ -119,12 +118,11 @@ void caches::Cache<KeyT, T>::LRU_to_ghost(KeyT key,
     ghost_hash[evicted_key] = ghost_list.begin();
 }
 
-template <typename KeyT, typename T>
-void caches::Cache<KeyT, T>::replace(KeyT key) {
+template <typename KeyT, typename T> void caches::Cache<KeyT, T>::replace() {
     if (!t1.empty() && (t1.size() > p || (p == 0 && t2.size() == capacity))) {
-        LRU_to_ghost(key, t1, b1, Which::B1);
+        LRU_to_ghost(t1, b1, Which::B1);
     } else {
-        LRU_to_ghost(key, t2, b2, Which::B2);
+        LRU_to_ghost(t2, b2, Which::B2);
     }
 }
 
