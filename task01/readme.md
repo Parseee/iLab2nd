@@ -5,13 +5,13 @@
 
 ## To run arc-cache
 ```bash
-cmake -S . -B build && cmake --build build
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build
 ./build/arc-cache
 ```
 
 ## To run belady-cache
 ```bash
-cmake -S . -B build && cmake --build build --target belady-cache
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --target belady-cache
 ./build/belady-cache
 ```
 
