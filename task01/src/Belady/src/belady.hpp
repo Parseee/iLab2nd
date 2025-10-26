@@ -42,12 +42,14 @@ int ideal_caching(size_t cache_size, const std::vector<T> &queries) {
                         break;
                     } else {
                         auto next_use = future_positions[*cache_it].front();
-                        farthest_query = std::max(farthest_query, next_use);
-                        victim = cache_it;
+                        if (next_use > farthest_query) {
+                            victim = cache_it;
+                            farthest_query = next_use;
+                        }
                     }
                 }
                 if (victim == cache.end()) {
-                    std::cerr << "failed to dewreference\n";
+                    std::cerr << "failed to find victim\n";
                 }
                 cache.erase(victim);
                 cache.insert(*it);

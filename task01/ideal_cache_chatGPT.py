@@ -21,6 +21,9 @@ def belady_optimal(requests, capacity):
 
         page_faults += 1  # miss
 
+        if len(positions[page]) == 0:
+            continue
+
         if len(cache) < capacity:
             cache.add(page)
             continue
